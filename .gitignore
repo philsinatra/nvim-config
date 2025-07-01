@@ -1,0 +1,19 @@
+# Lazy.nvim plugin directory (adjust if your lazy.nvim path is different)
+# The default location is typically ~/.local/share/nvim/lazy
+../.local/share/nvim/lazy/
+
+# Mason installed tools (LSPs, formatters, linters)
+../.local/share/nvim/mason/
+../.local/share/nvim/mason-lspconfig/
+../.local/share/nvim/mason-tool-installer/
+
+# Treesitter parsers
+../.local/share/nvim/treesitter/
+
+# Neovim swap files, undo files, backup files
+**/*.swp
+**/*.swo
+**/*.bak
+**/*.old
+.netrwhist
+.DS_Store
