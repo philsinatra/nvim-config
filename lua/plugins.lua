@@ -46,6 +46,13 @@ require('lazy').setup({
   {
     'nvim-tree/nvim-tree.lua',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
+    config = function()
+      require('nvim-tree').setup({
+        view = {
+          side = "right",
+        },
+      })
+    end
   },
 
   -- Fuzzy finder
@@ -55,31 +62,22 @@ require('lazy').setup({
     config = function()
       require('telescope').setup({
         defaults = {
-          -- Add file_ignore_patterns here
           file_ignore_patterns = {
             "node_modules/",
-            "%.git/",       -- To ignore .git directory
-            "%.vscode/",    -- To ignore .vscode if you use it
-            "%.cache/",     -- General cache directories
+            "%.git/",
+            "%.vscode/",
+            "%.cache/",
             "%.mypy_cache/",
-            "__pycache__/", -- Python specific
-            "%.DS_Store",   -- macOS specific
-            "dist/",        -- Common build output
-            "build/",       -- Common build output
+            "__pycache__/",
+            "%.DS_Store",
+            "dist/",
+            "build/",
           },
-          -- You can also configure specific pickers here if needed
-          -- find_files = {
-          --   -- For example, to always pass --no-require-git to rg/fd
-          --   find_command = { "rg", "--files", "--color", "never", "--no-require-git" }
-          -- }
         },
       })
-
-      -- Optional: Set up keymaps here if you haven't already
       local builtin = require('telescope.builtin')
       vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = '[F]ind [F]iles' })
       vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = '[F]ind [G]rep' })
-      -- ... other telescope keymaps
     end,
   },
 
@@ -109,27 +107,6 @@ require('lazy').setup({
   { 'windwp/nvim-autopairs' },
 
   -- Emmet
-  -- {
-  --     'mattn/emmet-vim',
-  --     config = function()
-  --         vim.g.user_emmet_mode = 'a'  -- Enable in all modes
-  --         vim.g.user_emmet_leader_key = '<C-e>'
-  --         -- vim.g.user_emmet_install_global = 1
-  --         vim.g.user_emmet_settings = {
-  --             svelte = { extends = 'html' },
-  --             javascript = { extends = 'jsx' },
-  --             typescript = { extends = 'tsx' }
-  --         }
-  --         -- Filetype detection
-  --         vim.g.user_emmet_expandabbr_key = '<C-e>,'
-  --         vim.cmd([[
-  --             autocmd FileType html,css,svelte,javascript,typescript,jsx,tsx EmmetInstall
-  --             autocmd FileType html setlocal omnifunc=emmet#completeTag
-  --         ]])
-  --     end,
-  -- },
-
-  -- Replace the entire mattn/emmet-vim block with:
   {
     'olrtg/nvim-emmet',
     config = function()
@@ -142,16 +119,62 @@ require('lazy').setup({
     'mfussenegger/nvim-lint',
     config = function()
       local lint = require('lint')
+      -- Dynamically determine linters based on available binaries
+      local function get_linters_for_ft(ft)
+        local linters = {}
+        local eslint_bin = find_local_bin('eslint')
+        local biome_bin = find_local_bin('biome')
+        if ft == 'javascript' or ft == 'typescript' or ft == 'svelte' then
+          if vim.fn.executable(eslint_bin) == 1 then
+            table.insert(linters, 'eslint_d')
+          elseif vim.fn.executable(biome_bin) == 1 then
+            table.insert(linters, 'biome')
+          end
+        end
+        if ft == 'svelte' or ft == 'css' then
+          table.insert(linters, 'stylelint')
+        end
+        if ft == 'html' then
+          table.insert(linters, 'htmlhint')
+        end
+        return linters
+      end
+
       lint.linters_by_ft = {
-        javascript = { 'eslint_d' },
-        typescript = { 'eslint_d' },
-        svelte = { 'eslint_d', 'stylelint' },
-        html = { 'htmlhint' },
-        css = { 'stylelint' },
+        javascript = get_linters_for_ft('javascript'),
+        typescript = get_linters_for_ft('typescript'),
+        svelte = get_linters_for_ft('svelte'),
+        html = get_linters_for_ft('html'),
+        css = get_linters_for_ft('css'),
       }
 
       -- Configure linters
       lint.linters.eslint_d.cmd = find_local_bin('eslint_d')
+      lint.linters.biome = {
+        cmd = find_local_bin('biome'),
+        args = { 'lint', '--stdin-file-path', vim.fn.expand('%:p') },
+        stdin = true,
+        stream = 'stdout',
+        parser = function(output, bufnr)
+          local diagnostics = {}
+          if output == '' then return diagnostics end
+          local ok, decoded = pcall(vim.json.decode, output)
+          if not ok or not decoded.diagnostics then return diagnostics end
+          for _, diag in ipairs(decoded.diagnostics) do
+            table.insert(diagnostics, {
+              bufnr = bufnr,
+              lnum = (diag.location.line or 1) - 1,
+              col = diag.location.column or 0,
+              end_lnum = (diag.location.line or 1) - 1,
+              end_col = diag.location.column or 0,
+              message = diag.message or 'Unknown Biome error',
+              severity = vim.diagnostic.severity[diag.severity and diag.severity:upper() or 'ERROR'] or vim.diagnostic.severity.ERROR,
+              source = 'biome',
+            })
+          end
+          return diagnostics
+        end,
+      }
       lint.linters.htmlhint.cmd = find_local_bin('htmlhint')
       lint.linters.stylelint.cmd = find_local_bin('stylelint')
       lint.linters.stylelint.args = {
@@ -162,9 +185,8 @@ require('lazy').setup({
         end,
       }
 
-      -- Add config if found
+      -- Add stylelint config if found
       local config_path = vim.fn.findfile('.stylelintrc.json', vim.fn.getcwd() .. ';')
-      -- vim.notify('Stylelint: Config path: ' .. (config_path or 'none'), vim.log.levels.INFO)
       if config_path ~= '' and vim.fn.filereadable(config_path) == 1 then
         table.insert(lint.linters.stylelint.args, '--config')
         table.insert(lint.linters.stylelint.args, config_path)
@@ -175,19 +197,9 @@ require('lazy').setup({
       -- Custom parser for Stylelint JSON output
       lint.linters.stylelint.parser = function(output, bufnr)
         local diagnostics = {}
-        -- Debug: Log buffer content
-        local buf_content = table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
-        -- vim.notify('Stylelint: Buffer content: ' .. vim.inspect(buf_content), vim.log.levels.DEBUG)
-        if output == '' then
-          -- vim.notify('Stylelint: Empty output', vim.log.levels.WARN)
-          return diagnostics
-        end
-        -- vim.notify('Stylelint: Raw output: ' .. vim.inspect(output), vim.log.levels.DEBUG)
+        if output == '' then return diagnostics end
         local ok, decoded = pcall(vim.json.decode, output)
-        if not ok or not decoded then
-          -- vim.notify('Stylelint: Failed to parse JSON: ' .. output, vim.log.levels.ERROR)
-          return diagnostics
-        end
+        if not ok or not decoded then return diagnostics end
         for _, result in ipairs(decoded) do
           if result.warnings and #result.warnings > 0 then
             for _, warning in ipairs(result.warnings) do
@@ -210,7 +222,8 @@ require('lazy').setup({
       -- Trigger linting
       vim.api.nvim_create_autocmd({ 'BufWritePost', 'InsertLeave' }, {
         callback = function()
-          local linters = lint.linters_by_ft[vim.bo.filetype] or {}
+          local ft = vim.bo.filetype
+          local linters = get_linters_for_ft(ft)
           for _, linter in ipairs(linters) do
             local cmd = lint.linters[linter].cmd
             if cmd and vim.fn.executable(cmd) == 1 then
@@ -230,9 +243,36 @@ require('lazy').setup({
     config = function()
       require('conform').setup({
         formatters_by_ft = {
-          javascript = { 'prettier', 'biome' },
-          typescript = { 'prettier', 'biome' },
-          svelte = { 'prettier', 'biome', 'stylelint' },
+          javascript = function()
+            local eslint_bin = find_local_bin('eslint')
+            local biome_bin = find_local_bin('biome')
+            if vim.fn.executable(eslint_bin) == 1 then
+              return { 'prettier' } -- Use prettier with ESLint
+            elseif vim.fn.executable(biome_bin) == 1 then
+              return { 'biome' }
+            end
+            return { 'prettier' }
+          end,
+          typescript = function()
+            local eslint_bin = find_local_bin('eslint')
+            local biome_bin = find_local_bin('biome')
+            if vim.fn.executable(eslint_bin) == 1 then
+              return { 'prettier' }
+            elseif vim.fn.executable(biome_bin) == 1 then
+              return { 'biome' }
+            end
+            return { 'prettier' }
+          end,
+          svelte = function()
+            local eslint_bin = find_local_bin('eslint')
+            local biome_bin = find_local_bin('biome')
+            if vim.fn.executable(eslint_bin) == 1 then
+              return { 'prettier', 'stylelint' }
+            elseif vim.fn.executable(biome_bin) == 1 then
+              return { 'biome', 'stylelint' }
+            end
+            return { 'prettier', 'stylelint' }
+          end,
           html = { 'prettier' },
           css = { 'stylelint', 'prettier' },
           json = { 'prettier' },
@@ -298,7 +338,7 @@ require('mason-tool-installer').setup({
     -- LSPs
     'ts_ls', -- TypeScript
     'svelte', -- Svelte
-    'emmet-ls', -- Emmet
+    'emmet_ls', -- Emmet
     'eslint', -- ESLint
     'cssls', -- CSS
     'html', -- HTML
@@ -311,39 +351,4 @@ require('mason-tool-installer').setup({
     'biome', -- Biome
   },
   auto_update = true,
-})
-
--- LSP config for HTML
-require('lspconfig').html.setup({
-  capabilities = require('cmp_nvim_lsp').default_capabilities(),
-  init_options = {
-    configurationSection = { "html", "css", "javascript" },
-    embeddedLanguages = {
-      css = true,
-      javascript = true
-    },
-    provideFormatter = true
-  }
-})
-
--- Emmet Language Server
-require('lspconfig').emmet_ls.setup({
-  filetypes = {
-    "html",
-    "css",
-    "javascript",
-    "typescript",
-    "javascriptreact", -- For JSX
-    "typescriptreact", -- For TSX
-    "svelte",
-  },
-  init_options = {
-    html = {
-      options = {
-        -- You can add Emmet-specific options here if needed,
-        -- for example, to control self-closing tags or other behaviors.
-        -- See Emmet LS documentation for available options.
-      }
-    }
-  }
 })

@@ -20,7 +20,7 @@ vim.diagnostic.config({
 
 -- Ensure mason-lspconfig sets up LSPs
 require('mason-lspconfig').setup({
-  ensure_installed = { 'cssls', 'html', 'svelte', 'ts_ls', 'eslint' },
+  ensure_installed = { 'cssls', 'html', 'svelte', 'ts_ls', 'eslint', 'emmet_ls' }, -- Added 'emmet_ls'
   automatic_installation = true,
 })
 
@@ -56,24 +56,46 @@ lspconfig.ts_ls.setup({
   root_dir = lspconfig.util.root_pattern('tsconfig.json', 'package.json'),
 })
 
--- ESLint
-lspconfig.eslint.setup({
+-- ESLint (conditional setup)
+local eslint_bin = vim.fn.getcwd() .. '/node_modules/.bin/eslint'
+if vim.fn.executable(eslint_bin) == 1 then
+  lspconfig.eslint.setup({
+    capabilities = capabilities,
+    on_attach = function(client, bufnr)
+      vim.api.nvim_create_autocmd('BufWritePre', {
+        buffer = bufnr,
+        command = 'EslintFixAll',
+      })
+    end,
+    settings = {
+      format = { enable = true },
+      workingDirectory = { mode = 'auto' },
+      codeAction = {
+        disableRuleComment = { enable = true, location = 'separateLine' },
+        showDocumentation = { enable = true },
+      },
+    },
+    root_dir = lspconfig.util.root_pattern('eslint.config.js', '.eslintrc', '.eslintrc.js', '.eslintrc.json', 'package.json'),
+  })
+end
+
+-- Emmet Language Server
+lspconfig.emmet_ls.setup({
   capabilities = capabilities,
-  on_attach = function(client, bufnr)
-    vim.api.nvim_create_autocmd('BufWritePre', {
-      buffer = bufnr,
-      command = 'EslintFixAll',
-    })
-  end,
-  settings = {
-    format = { enable = true },
-    workingDirectory = { mode = 'auto' },
-    codeAction = {
-      disableRuleComment = { enable = true, location = 'separateLine' },
-      showDocumentation = { enable = true },
+  filetypes = {
+    "html",
+    "css",
+    "javascript",
+    "typescript",
+    "javascriptreact",
+    "typescriptreact",
+    "svelte",
+  },
+  init_options = {
+    html = {
+      options = {},
     },
   },
-  root_dir = lspconfig.util.root_pattern('eslint.config.js', '.eslintrc', '.eslintrc.js', '.eslintrc.json', 'package.json'),
 })
 
 -- Autocompletion setup
