@@ -22,3 +22,20 @@ vim.opt.smartcase = true       -- Case-sensitive if uppercase used
 -- Performance
 vim.opt.updatetime = 250       -- Faster updates (for LSP, etc.)
 vim.opt.timeoutlen = 300       -- Faster keymap timeout
+
+-- Scrolling offset
+vim.opt.scrolloff = 999
+vim.opt.sidescrolloff = 999
+
+-- Code folding
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+-- vim.opt.foldcolumn = "0"
+vim.opt.foldtext = ""
+vim.opt.foldlevelstart = 99 
+vim.opt.foldlevel = 1 
+-- vim.opt.foldnextmax = 4
+
+-- Blink the cursor
+vim.opt.guicursor = "n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50,a:blinkwait700-blinkoff400-blinkon250-Cursor/lCursor,sm:block-blinkwait175-blinkoff150-blinkon175"
+
