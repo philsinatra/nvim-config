@@ -13,7 +13,11 @@ vim.opt.cursorline = true      -- Highlight current line
 vim.opt.termguicolors = true   -- Enable 24-bit RGB colors
 vim.opt.mouse = 'a'            -- Enable mouse support
 vim.opt.clipboard = 'unnamedplus' -- Use system clipboard
-vim.opt.guicursor = 'n-v-c:block,i-ci-ve:block,r-cr:hor20,o:hor50' -- Block cursor
+
+-- Cursor config
+-- Block cursor for normal, visual, command, insert, and visual-enter modes.
+-- With blinking settings for all modes.
+vim.opt.guicursor = "n-v-c:block,i-ci-ve:block,r-cr:hor20,o:hor50,a:blinkwait700-blinkoff400-blinkon250-Cursor/lCursor,sm:block-blinkwait175-blinkoff150-blinkon175"
 
 -- Search settings
 vim.opt.ignorecase = true      -- Case-insensitive searching
@@ -36,6 +40,4 @@ vim.opt.foldlevelstart = 99
 vim.opt.foldlevel = 1 
 -- vim.opt.foldnextmax = 4
 
--- Blink the cursor
-vim.opt.guicursor = "n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50,a:blinkwait700-blinkoff400-blinkon250-Cursor/lCursor,sm:block-blinkwait175-blinkoff150-blinkon175"
 
