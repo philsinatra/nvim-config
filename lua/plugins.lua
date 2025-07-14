@@ -284,7 +284,8 @@ require('lazy').setup({
           },
           biome = {
             command = find_local_bin('biome'),
-            args = { 'check', '--apply', '--stdin-file-path', '$FILENAME' },
+            args = { 'check', '--write', '$FILENAME' },
+            stdin = false,
           },
           stylelint = {
             command = find_local_bin('stylelint'),
