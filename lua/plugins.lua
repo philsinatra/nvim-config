@@ -50,6 +50,7 @@ require('lazy').setup({
       require('nvim-tree').setup({
         view = {
           side = "right",
+          width = 50,
         },
       })
     end
@@ -320,7 +321,7 @@ vim.cmd([[colorscheme rose-pine]])
 require('lualine').setup({ options = { theme = 'rose-pine' } })
 
 -- Basic plugin setups
-require('nvim-tree').setup()
+-- require('nvim-tree').setup()
 require('gitsigns').setup()
 require('nvim-autopairs').setup()
 
