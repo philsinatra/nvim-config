@@ -88,6 +88,7 @@ lspconfig.emmet_ls.setup({
 --    "javascript",
 --    "typescript",
     "javascriptreact",
+    "php",
     "typescriptreact",
     "svelte",
   },
