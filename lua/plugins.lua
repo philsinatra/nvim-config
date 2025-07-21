@@ -41,6 +41,9 @@ end
 require('lazy').setup({
   -- Colorscheme
   { 'rose-pine/neovim', name = 'rose-pine', priority = 1000 },
+  
+  -- Emmet wrapping style functionality
+  { 'tpope/vim-surround'},
 
   -- File explorer
   {
