@@ -35,3 +35,4 @@ map('n', '<leader>e', function() vim.diagnostic.open_float() end, opts)
 -- Custom keybindings
 vim.keymap.set('n', '<A-Down>', ':m .+1<CR>', {noremap = true, silent = true}) -- Move line down
 vim.keymap.set('n', '<A-Up>', ':m .-2<CR>', {noremap = true, silent = true}) -- Move line up
+vim.keymap.set('n', '<leader>d', ':bp<bar>bd#<CR>', { desc = 'Delete buffer and go to previous' })
