@@ -99,6 +99,21 @@ lspconfig.emmet_ls.setup({
   },
 })
 
+require('lspconfig').emmet_language_server.setup({
+  filetypes = {
+    'css', 'eruby', 'html', 'javascriptreact', 'php', 'scss', 'typescriptreact'
+  },
+  init_options = {
+    preferences = {},
+    showExpandedAbbreviations = "always",
+    showAbbreviationSuggestions = true,
+    showsuggestionAsSnippets = false,
+    syntaxProfiles = {},
+    variables = {},
+    excludedLanguages = {},
+  },
+})
+
 -- Autocompletion setup
 cmp.setup({
   snippet = { expand = function(args) luasnip.lsp_expand(args.body) end },
