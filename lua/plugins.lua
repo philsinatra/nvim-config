@@ -55,6 +55,9 @@ require('lazy').setup({
           side = "right",
           width = 50,
         },
+        filters = {
+          dotfiles = false
+        },
       })
     end
   },
