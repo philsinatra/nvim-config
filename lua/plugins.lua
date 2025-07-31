@@ -113,6 +113,18 @@ require('lazy').setup({
   -- Autopairs
   { 'windwp/nvim-autopairs' },
 
+  -- Auto rename tags
+    -- Auto rename HTML tags
+  {
+    "windwp/nvim-ts-autotag",
+    dependencies = "nvim-treesitter/nvim-treesitter",
+    -- config = function()
+    --   require("nvim-ts-autotag").setup({
+    --     enable_rename = true, -- Enable auto-rename functionality
+    --   })
+    -- end,
+  },
+
   -- Emmet
   {
     'olrtg/nvim-emmet',
@@ -359,4 +371,13 @@ require('mason-tool-installer').setup({
     'biome', -- Biome
   },
   auto_update = true,
+})
+
+-- Auto rename tags
+require('nvim-ts-autotag').setup({
+  opts = {
+    enable_close = true,  -- Auto close tags
+    enable_rename = true, -- Auto rename pairs of tags
+    enable_close_on_slash = false -- Auto close on trailing </
+  },
 })
