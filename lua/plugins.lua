@@ -56,7 +56,9 @@ require('lazy').setup({
           width = 50,
         },
         filters = {
-          dotfiles = false
+          dotfiles = false,
+          git_ignored = false,
+          custom = { "node_modules", ".svelte-kit" },
         },
       })
     end
@@ -71,6 +73,7 @@ require('lazy').setup({
         defaults = {
           file_ignore_patterns = {
             "node_modules/",
+            "%.svelte%-kit/",
             "%.git/",
             "%.vscode/",
             "%.cache/",
@@ -79,6 +82,12 @@ require('lazy').setup({
             "%.DS_Store",
             "dist/",
             "build/",
+          },
+        },
+        pickers = {
+          find_files = {
+              hidden = true,
+              no_ignore = true,
           },
         },
       })
