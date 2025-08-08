@@ -336,7 +336,21 @@ require('rose-pine').setup({
 vim.cmd([[colorscheme rose-pine]])
 
 -- Update lualine to use rose-pine
-require('lualine').setup({ options = { theme = 'rose-pine' } })
+require('lualine').setup({ 
+    options = { 
+        theme = 'rose-pine',
+        component_separators = { left = '', right = '' },
+        section_separators = { left = '', right = '' },
+    },
+    sections = {
+        lualine_c = { 
+            {
+                'filename',
+                path = 1, -- 0 = just filename, 1 = relative path, 2 = absolute path
+            }
+        }
+    }
+})
 
 -- Basic plugin setups
 -- require('nvim-tree').setup()
