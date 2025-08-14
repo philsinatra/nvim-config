@@ -73,6 +73,7 @@ require('lazy').setup({
         defaults = {
           file_ignore_patterns = {
             "node_modules/",
+            "vendor/",
             "%.svelte%-kit/",
             "%.git/",
             "%.vscode/",
