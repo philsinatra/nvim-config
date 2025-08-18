@@ -40,4 +40,15 @@ vim.opt.foldlevelstart = 99
 vim.opt.foldlevel = 1 
 -- vim.opt.foldnextmax = 4
 
-
+-- Set spelling indicator color
+vim.api.nvim_create_autocmd("OptionSet", {
+  pattern = "spell",
+  callback = function()
+    if vim.opt.spell:get() then
+      vim.api.nvim_set_hl(0, "SpellBad", {
+        undercurl = true,
+        sp = "#ff0000"  -- Replace with your preferred color
+      })
+    end
+  end
+})
