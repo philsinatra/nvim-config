@@ -20,7 +20,7 @@ vim.diagnostic.config({
 
 -- Ensure mason-lspconfig sets up LSPs
 require('mason-lspconfig').setup({
-  ensure_installed = { 'cssls', 'html', 'svelte', 'ts_ls', 'eslint', 'emmet_ls' }, -- Added 'emmet_ls'
+  ensure_installed = { 'cssls', 'html', 'svelte', 'ts_ls', 'eslint', 'emmet_ls', 'intelephense' }, 
   automatic_installation = true,
 })
 
@@ -42,6 +42,12 @@ lspconfig.html.setup({
       },
     },
   },
+})
+
+-- PHP (Intelephense)
+lspconfig.intelephense.setup({
+  capabilities = capabilities,
+  root_dir = lspconfig.util.root_pattern('composer.json', '.git'),
 })
 
 -- Svelte
@@ -78,6 +84,8 @@ if vim.fn.executable(eslint_bin) == 1 then
     root_dir = lspconfig.util.root_pattern('eslint.config.js', '.eslintrc', '.eslintrc.js', '.eslintrc.json', 'package.json'),
   })
 end
+
+
 
 -- Emmet Language Server
 lspconfig.emmet_ls.setup({

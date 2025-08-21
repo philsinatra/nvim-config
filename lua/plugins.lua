@@ -27,6 +27,12 @@ local function find_local_bin(bin_name)
   if vim.fn.executable(mason_bin) == 1 then
     return mason_bin
   end
+  -- Check Composer's vendor/bin
+  local project_root = vim.fn.getcwd()
+  local vendor_bin = project_root .. '/vendor/bin/' .. bin_name
+  if vim.fn.executable(vendor_bin) == 1 then
+    return vendor_bin
+  end
   -- Fallback to node_modules for other binaries
   local project_root = vim.fn.getcwd()
   local node_bin = project_root .. '/node_modules/.bin/' .. bin_name
@@ -160,6 +166,16 @@ require('lazy').setup({
             table.insert(linters, 'biome')
           end
         end
+        if ft == 'php' then
+            local phpcs_bin = find_local_bin('phpcs')
+            if vim.fn.executable(phpcs_bin) == 1 then
+              table.insert(linters, 'phpcs')
+            end
+            local phpstan_bin = find_local_bin('phpstan')
+            if vim.fn.executable(phpstan_bin) == 1 then
+              table.insert(linters, 'phpstan')
+            end
+        end
         if ft == 'svelte' or ft == 'css' then
           table.insert(linters, 'stylelint')
         end
@@ -175,6 +191,7 @@ require('lazy').setup({
         svelte = get_linters_for_ft('svelte'),
         html = get_linters_for_ft('html'),
         css = get_linters_for_ft('css'),
+        php = get_linters_for_ft('php'),
       }
 
       -- Configure linters
@@ -213,7 +230,32 @@ require('lazy').setup({
           return vim.fn.expand('%:p')
         end,
       }
+     -- PHPCS config (uses your phpcs.xml)
+    lint.linters.phpcs = {
+      cmd = find_local_bin('phpcs'),
+      stdin = true,
+      args = {
+        '--standard=phpcs.xml',
+        '--report=json',
+        '--stdin-path=%filepath',
+        '-',
+      },
+      ignore_exitcode = true,  -- Ignore non-zero exits if no errors
+    }
 
+    -- PHPStan config (default parser handles it; add --level or config if needed)
+    lint.linters.phpstan = {
+      cmd = find_local_bin('phpstan'),
+      stdin = false,
+      args = {
+        'analyse',
+        '--error-format=json',
+        '--no-progress',
+        '%filepath',
+      },
+      ignore_exitcode = true,
+    }
+            
       -- Add stylelint config if found
       local config_path = vim.fn.findfile('.stylelintrc.json', vim.fn.getcwd() .. ';')
       if config_path ~= '' and vim.fn.filereadable(config_path) == 1 then
@@ -305,6 +347,7 @@ require('lazy').setup({
           html = { 'prettier' },
           css = { 'stylelint', 'prettier' },
           json = { 'prettier' },
+          php = { 'php_cs_fixer' },
         },
         formatters = {
           prettier = {
@@ -325,6 +368,15 @@ require('lazy').setup({
               '$FILENAME',
             },
             stdin = true,
+          },
+          php_cs_fixer = {
+            command = find_local_bin('php_cs_fixer'),
+            args = {
+                'fix',
+                '$FILENAME',
+                '--config=.php-cs-fixer.php',
+                '--allow-risky=yes',
+            },
           },
         },
       })
@@ -393,6 +445,7 @@ require('mason-tool-installer').setup({
     -- Formatters
     'prettier', -- Prettier
     'biome', -- Biome
+    'phpcs', 'php-cs-fixer', 'phpstan'
   },
   auto_update = true,
 })
