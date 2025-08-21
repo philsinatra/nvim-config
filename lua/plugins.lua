@@ -64,7 +64,7 @@ require('lazy').setup({
         filters = {
           dotfiles = false,
           git_ignored = false,
-          custom = { "node_modules", ".svelte-kit" },
+          custom = { "node_modules", ".svelte-kit", ".DS_Store" },
         },
       })
     end
