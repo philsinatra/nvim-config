@@ -2,15 +2,31 @@ local lspconfig = require('lspconfig')
 local cmp = require('cmp')
 local luasnip = require('luasnip')
 
--- Configure diagnostics
+-- Configure diagnostics with suppression for eslint_d in Biome projects
 vim.diagnostic.config({
   virtual_text = {
     prefix = '●', -- Customize the prefix for virtual text
     source = 'always', -- Show source (e.g., 'eslint', 'ts_ls')
+    format = function(diagnostic)
+      -- Suppress eslint_d diagnostics if biome.json exists
+      local biome_config_path = vim.fn.getcwd() .. '/biome.json'
+      if vim.fn.filereadable(biome_config_path) == 1 and diagnostic.source == 'eslint_d' then
+        return nil
+      end
+      return diagnostic.message
+    end,
   },
   float = {
     source = 'always', -- Show source in floating window
     border = 'rounded', -- Add a border to the floating window
+    format = function(diagnostic)
+      -- Suppress eslint_d diagnostics in float if biome.json exists
+      local biome_config_path = vim.fn.getcwd() .. '/biome.json'
+      if vim.fn.filereadable(biome_config_path) == 1 and diagnostic.source == 'eslint_d' then
+        return nil
+      end
+      return diagnostic.message
+    end,
   },
   signs = true,
   underline = true,
@@ -20,7 +36,7 @@ vim.diagnostic.config({
 
 -- Ensure mason-lspconfig sets up LSPs
 require('mason-lspconfig').setup({
-  ensure_installed = { 'cssls', 'html', 'svelte', 'ts_ls', 'eslint', 'emmet_ls', 'intelephense' }, 
+  ensure_installed = { 'cssls', 'html', 'svelte', 'ts_ls', 'eslint', 'emmet_ls', 'intelephense', 'biome' }, 
   automatic_installation = true,
 })
 
@@ -64,7 +80,15 @@ lspconfig.ts_ls.setup({
 
 -- ESLint (conditional setup)
 local eslint_bin = vim.fn.getcwd() .. '/node_modules/.bin/eslint'
-if vim.fn.executable(eslint_bin) == 1 then
+local eslint_config_patterns = { 'eslint.config.js', '.eslintrc', '.eslintrc.js', '.eslintrc.json', '.eslintrc.yaml', '.eslintrc.yml' }
+local has_eslint_config = false
+for _, pattern in ipairs(eslint_config_patterns) do
+  if vim.fn.filereadable(vim.fn.getcwd() .. '/' .. pattern) == 1 then
+    has_eslint_config = true
+    break
+  end
+end
+if vim.fn.executable(eslint_bin) == 1 and has_eslint_config then
   lspconfig.eslint.setup({
     capabilities = capabilities,
     on_attach = function(client, bufnr)
@@ -85,7 +109,33 @@ if vim.fn.executable(eslint_bin) == 1 then
   })
 end
 
-
+-- Conditional Biome setup
+local biome_config_path = vim.fn.getcwd() .. '/biome.json'
+if vim.fn.filereadable(biome_config_path) == 1 then
+  lspconfig.biome.setup({
+    capabilities = capabilities,
+    root_dir = lspconfig.util.root_pattern('biome.json', 'package.json'),
+    on_attach = function(client, bufnr)
+      vim.api.nvim_buf_set_option(bufnr, 'formatexpr', 'v:lua.vim.lsp.formatexpr()')
+      -- Explicitly enable formatting for Biome
+      client.server_capabilities.documentFormattingProvider = true
+      -- Format with Biome on save
+      vim.api.nvim_create_autocmd('BufWritePre', {
+        buffer = bufnr,
+        callback = function()
+          vim.lsp.buf.format({ bufnr = bufnr, filter = function(c) return c.name == 'biome' end })
+        end,
+      })
+      -- Disable formatting for eslint and ts_ls to avoid conflicts with Biome
+      local active_clients = vim.lsp.get_clients() or {}
+      for _, active_client in ipairs(active_clients) do
+        if active_client.name == 'eslint' or active_client.name == 'ts_ls' then
+          active_client.server_capabilities.documentFormattingProvider = false
+        end
+      end
+    end,
+  })
+end
 
 -- Emmet Language Server
 lspconfig.emmet_ls.setup({
@@ -93,8 +143,6 @@ lspconfig.emmet_ls.setup({
   filetypes = {
     "html",
     "css",
---    "javascript",
---    "typescript",
     "javascriptreact",
     "php",
     "typescriptreact",
